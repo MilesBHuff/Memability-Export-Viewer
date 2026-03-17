@@ -10,4 +10,4 @@ Your notes should display in all their glory!
 
 ## License
 
-Copyright © 2026 Miles Bradley Huff. Publicly licensed per the terms of the GNU Affero General Public License, whose full text may be found at `./License.txt`.
+Copyright © 2026 Miles Bradley Huff. Publicly licensed per the terms of the GNU Affero General Public License v3.0 or later, whose full text may be found at `./License.txt`.
