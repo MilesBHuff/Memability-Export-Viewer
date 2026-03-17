@@ -31,6 +31,7 @@ const getData = async () => {
                 created: datum.created || globalThis.defaultTimestamp,
                 title: datum.title || 'untitled',
                 text: !datum.notes ? '' : String(datum.notes).replaceAll('&nbsp;', ' ').replaceAll(' ', ' ').replaceAll('<br/>', '\n'), // When Memability became Memz.co, it mangled several characters; we have to fix these.
+                removed: datum.removed ?? (datum.deleted ? globalThis.defaultTimestamp : undefined),
             };
             if(datum.items?.length) buildMap(datum.items, outputMap);
         }
@@ -69,6 +70,7 @@ const displayData = data => {
      */
     const buildDataDisplay = (data, parent, depth = 2) => {
         for(const datum of data) {
+            const removedClass = datum.removed ? ' deleted' : '';
 
             const container = document.createElement('div');
             container.setAttribute('class', 'container')
@@ -81,12 +83,12 @@ const displayData = data => {
             // container.appendChild(timestampContainer);
 
             const title = document.createElement(`h${Math.min(depth, 6)}`);
-            title.setAttribute('class', 'title')
+            title.setAttribute('class', `title${removedClass}`)
             title.textContent = datum.title;
             container.appendChild(title);
 
             const text = document.createElement('pre');
-            text.setAttribute('class', 'text')
+            text.setAttribute('class', `text${removedClass}`)
             text.textContent = datum.text;
             container.appendChild(text);
 
