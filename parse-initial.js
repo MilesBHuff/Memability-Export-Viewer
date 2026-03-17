@@ -10,22 +10,19 @@ async function main() {
     }
 
     // Clean the data
+    let cleanData = [];
     for(const datum of data) {
-
-        // These aren't tasks; they don't need a task_type.
-        delete datum.task_type;
-
-        // Escaped sequences need to be normalized before display.
-        String(datum.notes).replaceAll('\\\n', '\\n').replaceAll('\\\t', '\\t');
-
-        // The `updated` field is, unfortunately, the same for all of these notes, and wildly far-off of their creation dates.
-        delete datum.updated;
-        datum.timestamp = '2014-12-31T23:59:59.999999Z'
+        cleanData.push({
+            timestamp: '2014-12-31T23:59:59.999999Z', // The `updated` field is, unfortunately, the same for all of these notes, and wildly far-off of their creation dates; so I'm giving everything a reasonably representative timestamp.
+            title: datum.title ?? '',
+            text: !datum.notes ? '' : datum.notes.replaceAll('\\\n', '\\n').replaceAll('\\\t', '\\t'), // Escaped sequences need to be normalized before display.
+        });
     }
+    data = undefined;
 
     // Display the data
-    console.log(data);
-    for(const datum of data) {
+    console.log(cleanData);
+    for(const datum of cleanData) {
         const output = document.getElementById('output');
 
         const container = document.createElement('div');
@@ -41,9 +38,9 @@ async function main() {
         title.textContent = datum.title;
         container.appendChild(title);
 
-        const notes = document.createElement('pre');
-        notes.textContent = datum.notes;
-        container.appendChild(notes);
+        const text = document.createElement('pre');
+        text.textContent = datum.text;
+        container.appendChild(text);
 
         output.appendChild(container);
         const line = document.createElement('hr');
