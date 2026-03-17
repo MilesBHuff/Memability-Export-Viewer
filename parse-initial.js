@@ -64,33 +64,41 @@ async function main() {
         }
     };
     let parsedData = {};
-    parseData(structuredClone(cleanedData), parsedData);
-    console.debug(parsedData);
+    parseData(cleanedData, parsedData);
+    cleanedData = null;
 
     // Display the data
+    console.debug(parsedData);
+    /** Recursively parses through the data and constructs HTML to display it.
+     * @param {object} data
+     * @param {Element} parent
+     */
+    const displayData = (data, parent, depth = 2) => {
+        for(const id of Reflect.ownKeys(data)) {
+
+            const container = document.createElement('div');
+            container.setAttribute('id', id)
+            container.setAttribute('class', 'container')
+
+            const timestampContainer = document.createElement('p');
+            const timestamp = document.createElement('code');
+            timestamp.textContent = data[id].timestamp;
+            timestampContainer.appendChild(timestamp);
+            container.appendChild(timestampContainer);
+
+            const title = document.createElement(`h${depth}`);
+            title.textContent = data[id].title;
+            container.appendChild(title);
+
+            const text = document.createElement('pre');
+            text.textContent = data[id].text;
+            container.appendChild(text);
+
+            parent.appendChild(container);
+            if(data[id].children) displayData(data[id].children, container, depth + 1);
+        }
+    };
     const output = document.getElementById('output');
     output.replaceChildren();
-    for(const datum of cleanedData) {
-
-        const container = document.createElement('div');
-        container.setAttribute('id', datum.id)
-
-        const timestampContainer = document.createElement('p');
-        const timestamp = document.createElement('code');
-        timestamp.textContent = datum.timestamp;
-        timestampContainer.appendChild(timestamp);
-        container.appendChild(timestampContainer);
-
-        const title = document.createElement('h2');
-        title.textContent = datum.title;
-        container.appendChild(title);
-
-        const text = document.createElement('pre');
-        text.textContent = datum.text;
-        container.appendChild(text);
-
-        output.appendChild(container);
-        const line = document.createElement('hr');
-        output.appendChild(line);
-    }
+    displayData(parsedData, output);
 }
