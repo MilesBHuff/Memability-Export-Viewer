@@ -7,7 +7,7 @@ const getData = async () => {
     try {
         rawData = (await (await fetch(rawDataPath)).json()).items[0].items || []; // The only index is the Memability data.
     } catch(error) {
-        console.error(`Failed to load "${rawDataPath}"!`);
+        console.error(`Failed to load "${rawDataPath}"!`, error);
     }
 
     // Clean the data and build a map out of it.
@@ -18,7 +18,7 @@ const getData = async () => {
         for (const datum of inputData) {
             outputMap[datum.id] ={
                 parent_id: datum.parent,
-                // timestamp: oldData[i].updated || '2014-12-31T23:59:59.999999Z',
+                // timestamp: oldData[i].updated || '2014-12-31T23:59:59.999999Z', //NOTE: All the source timestamps are the same ridiculous datetime from 2019, while all the content is pre-2015.
                 title: datum.title || 'untitled',
                 text: !datum.notes ? '' : datum.notes,
             };
@@ -54,6 +54,7 @@ const displayData = data => {
     /** Recursively parses through the data and constructs HTML to display it.
      * @param {Array<object>} data
      * @param {Element} parent
+     * @param {number} depth (Note: Starts at `2` because page title is `1`.)
      */
     const buildDataDisplay = (data, parent, depth = 2) => {
         for(const datum of data) {
@@ -88,4 +89,12 @@ const displayData = data => {
 };
 
 ////////////////////////////////////////////////////////////////////////////////
-const main = async () => displayData(await getData());
+const main = async () => {
+    let data = [];
+    try {
+        data = await getData();
+    } catch(error) {
+        console.error(`Failed to get data!`, error);
+    }
+    displayData(data);
+};
