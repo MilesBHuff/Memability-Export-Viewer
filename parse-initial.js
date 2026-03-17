@@ -10,86 +10,48 @@ async function main() {
     }
 
     // Clean the data
-    /** Recursively parses through the array and constructs a new array without hierarchy, unneeded properties, or mistaken values.
-     *  All operations are in-place.
-     * @param {Array<object>} oldData
-     * @param {Array<object>} newData
+    /** Recursively parses through an Array and constructs a new array without hierarchy, unneeded properties, or mistaken values.
+     * @param {Array<object>} data
      */
-    const cleanData = (oldData, newData) => {
-        for(let i = 0; i < oldData.length; null) {
-            newData.push({
-                id: oldData[i].id,
-                id_parent: oldData[i].parent,
-                timestamp: oldData[i].updated || '2014-12-31T23:59:59.999999Z',
-                title: oldData[i].title || 'untitled',
-                text: !oldData[i].notes ? '' : oldData[i].notes.replaceAll('\\\n', '\\n').replaceAll('\\\t', '\\t'), // Escaped sequences need to be normalized before display.
+    const cleanData = data => {
+        for(const datum of data) {
+            cleanedData.push({
+                id: datum.id,
+                id_parent: datum.parent,
+                // timestamp: oldData[i].updated || '2014-12-31T23:59:59.999999Z',
+                title: datum.title || 'untitled',
+                text: !datum.notes ? '' : datum.notes.replaceAll('\\\n', '\\n').replaceAll('\\\t', '\\t'),
             });
-            if((oldData[i].items?.length ?? 0) > 0) {
-                cleanData(oldData[i].items, newData);
-            }
-            oldData.splice(i, 1);
+            if(datum.items?.length) cleanData(datum.items);
         }
     };
-    let cleanedData = [];
-    cleanData(rawData, cleanedData)
+    const cleanedData = [];
+    cleanData(rawData);
     rawData = null;
 
-    // Parse the data
-    /** Recursively parses through the data and constructs a new data with hierarchy.
-     *  All operations are in-place.
-     * @param {Array<object>} oldData
-     * @param {object} newData
-     * @param {string} id
-     * @param {string} id_parent
-     */
-    const parseData = (oldData, newData, id_self = undefined, id_parent = undefined) => {
-        for(let i = 0; i < oldData.length; i++) {
-            if(id_parent !== oldData[i].id_parent) continue;
-            if(id_self !== undefined && id_self !== oldData[i].id) continue;
-            const id = oldData[i].id;
-            const {timestamp, title, text} = oldData[i];
-            newData[id] = {timestamp, title, text, child_count: 0, children: {}};
-            oldData.splice(i, 1);
-            i--;
-            for(let j = 0; j < oldData.length; j++) {
-                if(id !== oldData[j].id_parent) continue;
-                newData[id].child_count++;
-                parseData(oldData, newData[id].children, oldData[j].id, oldData[j].id_parent);
-                i = j = 0;
-            }
-            if(newData[id].child_count === 0) {
-                delete newData[id].child_count;
-                delete newData[id].children;
-            }
-        }
-    };
-    let parsedData = {};
-    parseData(cleanedData, parsedData);
-    cleanedData = null;
+    // Build a map-by-ID of the cleaned data
+    const map = {};
+    for(const datum of cleanedData) {
+        map[datum.id] = {
+            // timestamp: datum.timestamp,
+            title: datum.title,
+            text: datum.text,
+        };
+    }
 
-    // Simplify the data
-    /** Recursively parses through the data and arrayifies ID-based hashmaps.
-     *  All operations are in-place.
-     * @param {object} oldData
-     * @param {Array<object>} newData
-     */
-    const simplifyData = (oldData, newData) => {
-        for(const id of Reflect.ownKeys(oldData)) {
-            const newDatum = {
-                // timestamp: oldData[id].timestamp, //NOTE: I've commented this since the timestamps in my export are not useful information.
-                title: oldData[id].title,
-                text: oldData[id].text,
-            }
-            if(oldData[id].children) {
-                newDatum.children = [];
-                simplifyData(oldData[id].children, newDatum.children);
-            }
-            newData.push(newDatum);
-        }
-    };
+    // Build a new Array which uses hierarchy instead of IDs to link nodes.
     const simplifiedData = [];
-    simplifyData(parsedData, simplifiedData);
-    parsedData = null;
+    for(const datum of cleanedData) {
+        const child = map[datum.id];
+        const parent = datum.id_parent in map ? map[datum.id_parent] : null;
+
+        if(parent) {
+            if(!parent.children) parent.children = [];
+            parent.children.push(child);
+        } else {
+            simplifiedData.push(child);
+        }
+    }
 
     // Display the data
     console.debug(simplifiedData);
