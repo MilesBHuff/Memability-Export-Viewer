@@ -10,51 +10,41 @@ const getData = async () => {
         console.error(`Failed to load "${rawDataPath}"!`);
     }
 
-    // Clean the data
-    /** Recursively parses through an Array and constructs a new array without hierarchy or unneeded/missing properties.
+    // Clean the data and build a map out of it.
+    /** Recursively parses through an Array and constructs a map without hierarchy or unneeded/missing properties.
      * @param {Array<object>} data
      */
-    const cleanData = (inData, outData = []) => {
-        for (const datum of inData) {
-            outData.push({
-                id: datum.id,
-                id_parent: datum.parent,
+    const buildMap = (inputData, outputMap = {}) => {
+        for (const datum of inputData) {
+            outputMap[datum.id] ={
+                parent_id: datum.parent,
                 // timestamp: oldData[i].updated || '2014-12-31T23:59:59.999999Z',
                 title: datum.title || 'untitled',
                 text: !datum.notes ? '' : datum.notes.replaceAll('\\\n', '\\n').replaceAll('\\\t', '\\t'),
-            });
-            if(datum.items?.length) cleanData(datum.items, outData);
+            };
+            if(datum.items?.length) buildMap(datum.items, outputMap);
         }
-        return outData;
+        return outputMap;
     };
-    const cleanedData = cleanData(rawData);
+    const mappedData = buildMap(rawData);
     rawData = null;
 
-    // Build a map-by-ID of the cleaned data
-    const map = {};
-    for(const datum of cleanedData) {
-        map[datum.id] = {
-            // timestamp: datum.timestamp,
-            title: datum.title,
-            text: datum.text,
-        };
-    }
-
     // Build a new Array which uses hierarchy instead of IDs to link nodes.
-    const simplifiedData = [];
-    for(const datum of cleanedData) {
-        const child = map[datum.id];
-        const parent = datum.id_parent in map ? map[datum.id_parent] : null;
+    const hierarchicalData = [];
+    for(const id of Object.keys(mappedData)) {
+        const datum = mappedData[id];
+        const parent = mappedData[datum.parent_id];
+        delete datum.parent; //NOTE: I'm re-using and mutating the original entries from the map to avoid doubling memory usage.
 
         if(parent) {
-            (parent.children ??= []).push(child);
+            (parent.children ??= []).push(datum);
         } else {
-            simplifiedData.push(child);
+            hierarchicalData.push(datum);
         }
     }
 
     // Done!
-    return simplifiedData;
+    return hierarchicalData;
 };
 
 ////////////////////////////////////////////////////////////////////////////////
