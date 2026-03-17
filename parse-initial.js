@@ -1,12 +1,13 @@
-async function main() {
+////////////////////////////////////////////////////////////////////////////////
+const getData = async () => {
 
     // Load JSON file
     let rawData;
     const rawDataPath = 'Memability.json'; // This is an export from Google Tasks of "tasks" created by the app Memability/Memz.co in the process of backing up my notes.
     try {
-        rawData = (await (await fetch(rawDataPath)).json()).items[0].items; // The only index is the Memability data.
+        rawData = (await (await fetch(rawDataPath)).json()).items[0].items || []; // The only index is the Memability data.
     } catch(error) {
-        console.error(`"${rawDataPath}" failed to load!`);
+        console.error(`Failed to load "${rawDataPath}"!`);
     }
 
     // Clean the data
@@ -43,23 +44,28 @@ async function main() {
     const simplifiedData = [];
     for(const datum of cleanedData) {
         const child = map[datum.id];
-        const parent = datum.id_parent in map ? map[datum.id_parent] : null;
+        const parent = map[datum.id_parent];
 
         if(parent) {
-            if(!parent.children) parent.children = [];
-            parent.children.push(child);
+            (parent.children ??= []).push(child);
         } else {
             simplifiedData.push(child);
         }
     }
 
-    // Display the data
-    console.debug(simplifiedData);
+    // Done!
+    return simplifiedData;
+};
+
+////////////////////////////////////////////////////////////////////////////////
+const displayData = data => {
+    console.debug(data);
+
     /** Recursively parses through the data and constructs HTML to display it.
      * @param {Array<object>} data
      * @param {Element} parent
      */
-    const displayData = (data, parent, depth = 2) => {
+    const buildDataDisplay = (data, parent, depth = 2) => {
         for(const datum of data) {
 
             const container = document.createElement('div');
@@ -72,7 +78,7 @@ async function main() {
             // timestampContainer.appendChild(timestamp);
             // container.appendChild(timestampContainer);
 
-            const title = document.createElement(`h${depth < 6 ? depth : 6}`);
+            const title = document.createElement(`h${Math.min(depth, 6)}`);
             title.setAttribute('class', 'title')
             title.textContent = datum.title;
             container.appendChild(title);
@@ -83,10 +89,13 @@ async function main() {
             container.appendChild(text);
 
             parent.appendChild(container);
-            if(datum.children) displayData(datum.children, container, depth + 1);
+            if(datum.children) buildDataDisplay(datum.children, container, depth + 1);
         }
     };
     const output = document.getElementById('output');
     output.replaceChildren();
-    displayData(simplifiedData, output);
-}
+    buildDataDisplay(data, output);
+};
+
+////////////////////////////////////////////////////////////////////////////////
+const main = async () => displayData(await getData());
