@@ -1,6 +1,6 @@
 globalThis.memability = {
     skipRemoved: true,
-    defaultTimestamp: (new Date()).toISOString().replace('Z', '000Z'),
+    defaultTimestamp: (new Date()).toISOString().replace('Z', '000Z'), // Weird, but necessary to match Google Tasks' timestamp format.
 };
 const sanitize = str => str.replaceAll('&nbsp;', ' ').replaceAll(' ', ' ').replaceAll('<br/>', '\n'); // When Memability became Memz.co, it mangled several characters; we have to fix these.
 const tidyDatetime = datetime => new Date(datetime).toISOString().replace('.000Z', 'Z');
@@ -29,13 +29,17 @@ const getData = async () => {
                 continue;
             }
 
+             // Exclude blank notes.
+            datum.title = datum.title?.trim();
+            datum.notes = datum.notes?.trim();
+            if(!datum.title && !datum.notes) continue;
+
             // Construct the new object.
-            if(!datum.title && !datum.notes) continue; // Exclude blank notes.
             outputMap[datum.id] = {};
             outputMap[datum.id].content = {};
             outputMap[datum.id].content.title = datum.title ? sanitize(datum.title) : 'untitled';
             if(datum.notes) outputMap[datum.id].content.text = sanitize(datum.notes);
-            if(datum.removed || datum.updated || datum.updated) {
+            if(datum.removed || datum.updated || datum.created) {
                 outputMap[datum.id].timestamps = {};
                 outputMap[datum.id].timestamps.removed = datum.removed != null ? tidyDatetime(datum.removed) : (datum.deleted ? tidyDatetime(globalThis.memability.defaultTimestamp) : undefined);
                 if(!outputMap[datum.id].timestamps.removed) delete outputMap[datum.id].timestamps.removed;
@@ -58,8 +62,12 @@ const getData = async () => {
     const hierarchicalData = [];
     for(const id of Object.keys(mappedData)) {
         const datum = mappedData[id];
+        if(id === datum.parent_id) {
+            console.error(`${id} is it's own parent!`);
+            continue;
+        }
         const parent = mappedData[datum.parent_id];
-        if(datum.parent_id && (parent == null || parent == '')) console.warn(`"${datum.parent_id}" is not a valid parent ID!`);
+        if(datum.parent_id && !parent) console.warn(`"${datum.parent_id}" is not a valid parent ID!`);
         delete datum.parent_id; //NOTE: I'm re-using and mutating the original entries from the map to avoid doubling memory usage.
 
         if(parent) {
@@ -89,7 +97,7 @@ const displayData = data => {
     const buildDataDisplay = (data, parent, depth = 2) => {
         for(const datum of data) {
             let removedClass = '';
-            if(datum.timestamps.removed) {
+            if(datum.timestamps?.removed) {
                 if(globalThis.memability.skipRemoved) continue;
                 removedClass = ' deleted';
             }
@@ -115,7 +123,7 @@ const displayData = data => {
                 const timestamp = document.createElement('code');
                 timestamp.textContent
                     = (datum.timestamps.removed ? `Deleted ${localizeDatetime(datum.timestamps.removed)} | ` : '')
-                    + (datum.timestamps.updated !== datum.timestamps.created ? `Updated ${localizeDatetime(datum.timestamps.updated)} | ` : '')
+                    + (datum.timestamps.updated && datum.timestamps.updated !== datum.timestamps.created ? `Updated ${localizeDatetime(datum.timestamps.updated)} | ` : '')
                     + `Created ${localizeDatetime(datum.timestamps.created)}`;
                 timestampContainer.appendChild(timestamp);
                 container.appendChild(timestampContainer);
