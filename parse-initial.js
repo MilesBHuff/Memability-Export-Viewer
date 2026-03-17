@@ -1,3 +1,7 @@
+globalThis.memability = {
+    defaultTimestamp: '2018-03-24T09:54:00.000000Z', // Replace this with when you exported your notes.
+};
+
 ////////////////////////////////////////////////////////////////////////////////
 const getData = async () => {
 
@@ -15,16 +19,18 @@ const getData = async () => {
      * @param {Array<object>} data
      */
     const buildMap = (inputData, outputMap = {}) => {
+        // inputData.reverse();
         for(const datum of inputData) {
             if(outputMap[datum.id] != null) {
                 console.warn(`"${datum.id}" is not a unique ID — data will be lost!`)
                 continue;
             }
-            outputMap[datum.id] = {
-                parent_id: datum.parent,
-                // timestamp: oldData[i].updated || '2014-12-31T23:59:59.999999Z', //NOTE: All the source timestamps are the same ridiculous datetime from 2019, while all the content is pre-2015.
+            outputMap[String(datum.id)] = {
+                parent_id: String(datum.parent),
+                updated: datum.updated || globalThis.defaultTimestamp,
+                created: datum.created || globalThis.defaultTimestamp,
                 title: datum.title || 'untitled',
-                text: !datum.notes ? '' : datum.notes,
+                text: !datum.notes ? '' : String(datum.notes).replaceAll('&nbsp;', ' ').replaceAll(' ', ' ').replaceAll('<br/>', '\n'), // When Memability became Memz.co, it mangled several characters; we have to fix these.
             };
             if(datum.items?.length) buildMap(datum.items, outputMap);
         }
@@ -38,7 +44,7 @@ const getData = async () => {
     for(const id of Object.keys(mappedData)) {
         const datum = mappedData[id];
         const parent = mappedData[datum.parent_id];
-        if(datum.parent_id && !parent) console.warn(`"${datum.parent_id}" is not a valid parent ID!`);
+        if(datum.parent_id && (parent == null || parent == '')) console.warn(`"${datum.parent_id}" is not a valid parent ID!`);
         delete datum.parent_id; //NOTE: I'm re-using and mutating the original entries from the map to avoid doubling memory usage.
 
         if(parent) {
