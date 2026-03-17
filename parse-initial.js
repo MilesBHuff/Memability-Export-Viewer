@@ -16,21 +16,23 @@ async function main() {
      * @param {Array<object>} newData
      */
     const cleanData = (oldData, newData) => {
-        for(const datum of oldData) {
+        for(let i = 0; i < oldData.length; null) {
             newData.push({
-                id: datum.id,
-                id_parent: datum.parent,
+                id: oldData[i].id,
+                id_parent: oldData[i].parent,
                 timestamp: '2014-12-31T23:59:59.999999Z', // The `updated` field is, unfortunately, the same for all of these notes, and wildly far-off of their creation dates; so I'm giving everything a reasonably representative timestamp.
-                title: datum.title ?? '',
-                text: !datum.notes ? '' : datum.notes.replaceAll('\\\n', '\\n').replaceAll('\\\t', '\\t'), // Escaped sequences need to be normalized before display.
+                title: oldData[i].title || 'untitled',
+                text: !oldData[i].notes ? '' : oldData[i].notes.replaceAll('\\\n', '\\n').replaceAll('\\\t', '\\t'), // Escaped sequences need to be normalized before display.
             });
-            if(datum.items?.length ?? 0 > 0) {
-                cleanData(datum.items, newData)
+            if(oldData[i].items?.length ?? 0 > 0) {
+                cleanData(oldData[i].items, newData);
             }
+            oldData.splice(i, 1);
         }
     };
-    const cleanedData = [];
+    let cleanedData = [];
     cleanData(rawData, cleanedData)
+    rawData = null;
 
     // Parse the data
     /** Recursively parses through the data and constructs a new data with hierarchy.
