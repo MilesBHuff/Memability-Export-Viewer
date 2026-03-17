@@ -1,6 +1,7 @@
 globalThis.memability = {
     defaultTimestamp: (new Date()).toISOString().replace('Z', '000Z'),
 };
+const localizeDatetime = datetime => new Date(datetime).toLocaleString('en-CA', {dateStyle: 'short', timeStyle: 'short', hour12: false}).replace(',', ''); // `en-CA` used in order to get Y-M-D.
 
 ////////////////////////////////////////////////////////////////////////////////
 const getData = async () => {
@@ -26,11 +27,11 @@ const getData = async () => {
             }
             outputMap[datum.id] = {
                 parent_id: datum.parent,
-                updated: datum.updated || globalThis.defaultTimestamp,
-                created: datum.created || globalThis.defaultTimestamp,
+                updated: localizeDatetime(datum.updated || globalThis.defaultTimestamp),
+                created: localizeDatetime(datum.created || globalThis.defaultTimestamp),
                 title: datum.title || 'untitled',
                 text: !datum.notes ? '' : String(datum.notes).replaceAll('&nbsp;', ' ').replaceAll(' ', ' ').replaceAll('<br/>', '\n'), // When Memability became Memz.co, it mangled several characters; we have to fix these.
-                removed: datum.removed ?? (datum.deleted ? globalThis.defaultTimestamp : undefined),
+                removed: datum.removed != null ? localizeDatetime(datum.removed) : (datum.deleted ? localizeDatetime(globalThis.defaultTimestamp) : undefined),
             };
             if(datum.items?.length) buildMap(datum.items, outputMap);
         }
@@ -74,13 +75,6 @@ const displayData = data => {
             const container = document.createElement('div');
             container.setAttribute('class', 'container')
 
-            // const timestampContainer = document.createElement('p');
-            // timestampContainer.setAttribute('class', 'timestamp')
-            // const timestamp = document.createElement('code');
-            // timestamp.textContent = datum.updated;
-            // timestampContainer.appendChild(timestamp);
-            // container.appendChild(timestampContainer);
-
             const title = document.createElement(`h${Math.min(depth, 6)}`);
             title.setAttribute('class', `title${removedClass}`)
             title.textContent = datum.title;
@@ -90,6 +84,13 @@ const displayData = data => {
             text.setAttribute('class', `text${removedClass}`)
             text.textContent = datum.text;
             container.appendChild(text);
+
+            const timestampContainer = document.createElement('p');
+            timestampContainer.setAttribute('class', 'timestamp')
+            const timestamp = document.createElement('code');
+            timestamp.textContent = (datum.removed ? `Deleted ${datum.removed} | ` : '') + (datum.updated !== datum.created ? `Updated ${datum.updated} | ` : '') + `Created ${datum.created}`;
+            timestampContainer.appendChild(timestamp);
+            container.appendChild(timestampContainer);
 
             parent.appendChild(container);
             if(datum.children) buildDataDisplay(datum.children, container, depth + 1);

@@ -50,6 +50,10 @@ pre {
     white-space-collapse: preserve-breaks;
     overflow-wrap: anywhere;
 }
+.timestamp {
+    color: #9a9c84;
+    text-align: center;
+}
 .deleted {
     text-decoration: line-through;
 }
