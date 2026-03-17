@@ -25,8 +25,8 @@ const getData = async () => {
                 console.warn(`"${datum.id}" is not a unique ID — data will be lost!`)
                 continue;
             }
-            outputMap[String(datum.id)] = {
-                parent_id: String(datum.parent),
+            outputMap[datum.id] = {
+                parent_id: datum.parent,
                 updated: datum.updated || globalThis.defaultTimestamp,
                 created: datum.created || globalThis.defaultTimestamp,
                 title: datum.title || 'untitled',
