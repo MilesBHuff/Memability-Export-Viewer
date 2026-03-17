@@ -20,7 +20,7 @@ async function main() {
             newData.push({
                 id: oldData[i].id,
                 id_parent: oldData[i].parent,
-                timestamp: '2014-12-31T23:59:59.999999Z', // The `updated` field is, unfortunately, the same for all of these notes, and wildly far-off of their creation dates; so I'm giving everything a reasonably representative timestamp.
+                timestamp: oldData[i].updated || '2014-12-31T23:59:59.999999Z',
                 title: oldData[i].title || 'untitled',
                 text: !oldData[i].notes ? '' : oldData[i].notes.replaceAll('\\\n', '\\n').replaceAll('\\\t', '\\t'), // Escaped sequences need to be normalized before display.
             });
@@ -80,17 +80,20 @@ async function main() {
             container.setAttribute('id', id)
             container.setAttribute('class', 'container')
 
-            const timestampContainer = document.createElement('p');
-            const timestamp = document.createElement('code');
-            timestamp.textContent = data[id].timestamp;
-            timestampContainer.appendChild(timestamp);
-            container.appendChild(timestampContainer);
+            // const timestampContainer = document.createElement('p');
+            // timestampContainer.setAttribute('class', 'timestamp')
+            // const timestamp = document.createElement('code');
+            // timestamp.textContent = data[id].timestamp;
+            // timestampContainer.appendChild(timestamp);
+            // container.appendChild(timestampContainer);
 
             const title = document.createElement(`h${depth}`);
+            title.setAttribute('class', 'title')
             title.textContent = data[id].title;
             container.appendChild(title);
 
             const text = document.createElement('pre');
+            text.setAttribute('class', 'text')
             text.textContent = data[id].text;
             container.appendChild(text);
 
