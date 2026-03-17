@@ -1,7 +1,14 @@
 /* Colors sampled from screenshots of Memability, before the rebrand to Memz.co */
+html {
+    background-color: #ceceb6;
+    display: flex;
+    justify-content: center;
+}
 body {
     color: #4f4c3b;
     background-color: #f7f8d0;
+    max-width: 60rem;
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
 }
 * {
     font-family: 'Droid Sans', 'Noto Sans', sans-serif;
@@ -13,6 +20,7 @@ header {
     color: #d8d6bf;
     background-color: #375b70;
     padding: 1rem 2rem;
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
 }
 h1 {
     font-size: 200%;
@@ -32,6 +40,7 @@ h2, h3, h4, h5, h6 {
     display: flex;
     flex-direction: column;
     gap: 1rem;
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
 }
 .container >* {
     margin: unset;
