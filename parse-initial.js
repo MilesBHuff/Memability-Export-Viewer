@@ -85,7 +85,9 @@ const displayData = data => {
     };
     const output = document.getElementById('output');
     output.replaceChildren();
-    buildDataDisplay(data, output);
+    const fragment = document.createDocumentFragment();
+    buildDataDisplay(data, fragment);
+    output.appendChild(fragment);
 };
 
 ////////////////////////////////////////////////////////////////////////////////
