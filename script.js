@@ -1,5 +1,6 @@
 globalThis.memability = {
     defaultTimestamp: (new Date()).toISOString().replace('Z', '000Z'),
+    skipRemoved: true,
 };
 const localizeDatetime = datetime => new Date(datetime).toLocaleString('en-CA', {dateStyle: 'short', timeStyle: 'short', hour12: false}).replace(',', ''); // `en-CA` used in order to get Y-M-D.
 
@@ -70,7 +71,11 @@ const displayData = data => {
      */
     const buildDataDisplay = (data, parent, depth = 2) => {
         for(const datum of data) {
-            const removedClass = datum.removed ? ' deleted' : '';
+            let removedClass = '';
+            if(datum.removed) {
+                if(globalThis.skipRemoved) continue;
+                removedClass = ' deleted';
+            }
 
             const container = document.createElement('div');
             container.setAttribute('class', 'container')
