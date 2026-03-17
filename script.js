@@ -56,8 +56,12 @@ const getData = async () => {
         }
     }
 
-    // Done!
-    return hierarchicalData;
+    // Remove `/` entry, if present, then return.
+    if(hierarchicalData.length === 0) return [];
+    if(hierarchicalData.length > 1 || !hierarchicalData[0].children || hierarchicalData[0].children.length === 0) return hierarchicalData;
+    const trimmedData = [];
+    for(const datum of hierarchicalData[0].children) trimmedData.push(datum);
+    return trimmedData;
 };
 
 ////////////////////////////////////////////////////////////////////////////////
