@@ -7,8 +7,10 @@ html {
 body {
     color: #4f4c3b;
     background-color: #f7f8d0;
-    max-width: 60rem;
+    border-radius: 0.5rem;
     box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+    max-width: 60rem;
+    margin: 1rem;
 }
 * {
     font-family: 'Droid Sans', 'Noto Sans', sans-serif;
