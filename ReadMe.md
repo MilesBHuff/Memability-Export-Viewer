@@ -7,3 +7,7 @@ To use this, first download a JSON of your Memability/Memz.co notes from Google 
 Next, simply run `server.sh` and navigate to `http://localhost:8000` in your web-browser.
 
 Your notes should display in all their glory!
+
+## License
+
+Copyright © 2026 Miles Bradley Huff. Publicly licensed per the terms of the GNU Affero General Public License, whose full text may be found at `./License.txt`.
