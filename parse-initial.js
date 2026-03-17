@@ -5,7 +5,7 @@ const getData = async () => {
     let rawData;
     const rawDataPath = 'Memability.json'; // This is an export from Google Tasks of "tasks" created by the app Memability/Memz.co in the process of backing up my notes.
     try {
-        rawData = (await (await fetch(rawDataPath)).json()).items[0].items || []; // The only index is the Memability data.
+        rawData = (await (await fetch(rawDataPath)).json()).items?.[0]?.items || []; // The only index is the Memability data.
     } catch(error) {
         console.error(`Failed to load "${rawDataPath}"!`, error);
     }
@@ -15,8 +15,12 @@ const getData = async () => {
      * @param {Array<object>} data
      */
     const buildMap = (inputData, outputMap = {}) => {
-        for (const datum of inputData) {
-            outputMap[datum.id] ={
+        for(const datum of inputData) {
+            if(outputMap[datum.id] != null) {
+                console.warn(`"${datum.id}" is not a unique ID — data will be lost!`)
+                continue;
+            }
+            outputMap[datum.id] = {
                 parent_id: datum.parent,
                 // timestamp: oldData[i].updated || '2014-12-31T23:59:59.999999Z', //NOTE: All the source timestamps are the same ridiculous datetime from 2019, while all the content is pre-2015.
                 title: datum.title || 'untitled',
@@ -34,7 +38,8 @@ const getData = async () => {
     for(const id of Object.keys(mappedData)) {
         const datum = mappedData[id];
         const parent = mappedData[datum.parent_id];
-        delete datum.parent; //NOTE: I'm re-using and mutating the original entries from the map to avoid doubling memory usage.
+        if(datum.parent_id && !parent) console.warn(`"${datum.parent_id}" is not a valid parent ID!`);
+        delete datum.parent_id; //NOTE: I'm re-using and mutating the original entries from the map to avoid doubling memory usage.
 
         if(parent) {
             (parent.children ??= []).push(datum);
