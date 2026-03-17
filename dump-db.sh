@@ -9,5 +9,5 @@ SELECT
   t.TEXT_FULL as notes
 FROM NOTE n
 LEFT JOIN NOTE_TEXT t ON n.ID = t.NOTE_ID
-ORDER BY n.PARENT_ID, n.POSITION;
+ORDER BY n.PARENT_ID, n.UPDATED DESC, n.CREATED DESC;
 " | jq '{items: [{title: "Memability", items: .}]}' > Memability.json
