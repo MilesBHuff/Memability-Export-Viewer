@@ -24,7 +24,7 @@ async function main() {
                 title: oldData[i].title || 'untitled',
                 text: !oldData[i].notes ? '' : oldData[i].notes.replaceAll('\\\n', '\\n').replaceAll('\\\t', '\\t'), // Escaped sequences need to be normalized before display.
             });
-            if(oldData[i].items?.length ?? 0 > 0) {
+            if((oldData[i].items?.length ?? 0) > 0) {
                 cleanData(oldData[i].items, newData);
             }
             oldData.splice(i, 1);
@@ -110,7 +110,7 @@ async function main() {
             // timestampContainer.appendChild(timestamp);
             // container.appendChild(timestampContainer);
 
-            const title = document.createElement(`h${depth}`);
+            const title = document.createElement(`h${depth < 6 ? depth : 6}`);
             title.setAttribute('class', 'title')
             title.textContent = datum.title;
             container.appendChild(title);
