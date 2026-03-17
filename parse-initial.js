@@ -11,23 +11,23 @@ const getData = async () => {
     }
 
     // Clean the data
-    /** Recursively parses through an Array and constructs a new array without hierarchy, unneeded properties, or mistaken values.
+    /** Recursively parses through an Array and constructs a new array without hierarchy or unneeded/missing properties.
      * @param {Array<object>} data
      */
-    const cleanData = data => {
-        for(const datum of data) {
-            cleanedData.push({
+    const cleanData = (inData, outData = []) => {
+        for (const datum of inData) {
+            outData.push({
                 id: datum.id,
                 id_parent: datum.parent,
                 // timestamp: oldData[i].updated || '2014-12-31T23:59:59.999999Z',
                 title: datum.title || 'untitled',
                 text: !datum.notes ? '' : datum.notes.replaceAll('\\\n', '\\n').replaceAll('\\\t', '\\t'),
             });
-            if(datum.items?.length) cleanData(datum.items);
+            if(datum.items?.length) cleanData(datum.items, outData);
         }
+        return outData;
     };
-    const cleanedData = [];
-    cleanData(rawData);
+    const cleanedData = cleanData(rawData);
     rawData = null;
 
     // Build a map-by-ID of the cleaned data
@@ -44,7 +44,7 @@ const getData = async () => {
     const simplifiedData = [];
     for(const datum of cleanedData) {
         const child = map[datum.id];
-        const parent = map[datum.id_parent];
+        const parent = datum.id_parent in map ? map[datum.id_parent] : null;
 
         if(parent) {
             (parent.children ??= []).push(child);
