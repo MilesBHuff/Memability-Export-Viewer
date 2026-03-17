@@ -10,10 +10,14 @@ async function main() {
     }
 
     // Clean the data
-    let cleanedData = [];
-    const cleanData = data => {
-        for(const datum of data) {
-            cleanedData.push({
+    /** Recursively parses through the array and constructs a new array without hierarchy, unneeded properties, or mistaken values.
+     *  All operations are in-place.
+     * @param {Array<object>} oldData
+     * @param {Array<object>} newData
+     */
+    const cleanData = (oldData, newData) => {
+        for(const datum of oldData) {
+            newData.push({
                 id: datum.id,
                 id_parent: datum.parent,
                 timestamp: '2014-12-31T23:59:59.999999Z', // The `updated` field is, unfortunately, the same for all of these notes, and wildly far-off of their creation dates; so I'm giving everything a reasonably representative timestamp.
@@ -21,16 +25,50 @@ async function main() {
                 text: !datum.notes ? '' : datum.notes.replaceAll('\\\n', '\\n').replaceAll('\\\t', '\\t'), // Escaped sequences need to be normalized before display.
             });
             if(datum.items?.length ?? 0 > 0) {
-                cleanData(datum.items)
+                cleanData(datum.items, newData)
             }
         }
     };
-    cleanData(rawData)
+    const cleanedData = [];
+    cleanData(rawData, cleanedData)
+
+    // Parse the data
+    /** Recursively parses through the data and constructs a new data with hierarchy.
+     *  All operations are in-place.
+     * @param {Array<object>} oldData
+     * @param {object} newData
+     * @param {string} id
+     * @param {string} id_parent
+     */
+    const parseData = (oldData, newData, id_self = undefined, id_parent = undefined) => {
+        for(let i = 0; i < oldData.length; i++) {
+            if(id_parent !== oldData[i].id_parent) continue;
+            if(id_self !== undefined && id_self !== oldData[i].id) continue;
+            const id = oldData[i].id;
+            const {timestamp, title, text} = oldData[i];
+            newData[id] = {timestamp, title, text, child_count: 0, children: {}};
+            oldData.splice(i, 1);
+            i--;
+            for(let j = 0; j < oldData.length; j++) {
+                if(id !== oldData[j].id_parent) continue;
+                newData[id].child_count++;
+                parseData(oldData, newData[id].children, oldData[j].id, oldData[j].id_parent);
+                i = j = 0;
+            }
+            if(newData[id].child_count === 0) {
+                delete newData[id].child_count;
+                delete newData[id].children;
+            }
+        }
+    };
+    let parsedData = {};
+    parseData(structuredClone(cleanedData), parsedData);
+    console.debug(parsedData);
 
     // Display the data
-    console.log(cleanedData);
+    const output = document.getElementById('output');
+    output.replaceChildren();
     for(const datum of cleanedData) {
-        const output = document.getElementById('output');
 
         const container = document.createElement('div');
         container.setAttribute('id', datum.id)
