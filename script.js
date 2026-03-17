@@ -1,5 +1,5 @@
 globalThis.memability = {
-    defaultTimestamp: '2018-03-24T09:54:00.000000Z', // Replace this with when you exported your notes.
+    defaultTimestamp: (new Date()).toISOString().replace('Z', '000Z'),
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -19,7 +19,6 @@ const getData = async () => {
      * @param {Array<object>} data
      */
     const buildMap = (inputData, outputMap = {}) => {
-        // inputData.reverse();
         for(const datum of inputData) {
             if(outputMap[datum.id] != null) {
                 console.warn(`"${datum.id}" is not a unique ID — data will be lost!`)
@@ -78,7 +77,7 @@ const displayData = data => {
             // const timestampContainer = document.createElement('p');
             // timestampContainer.setAttribute('class', 'timestamp')
             // const timestamp = document.createElement('code');
-            // timestamp.textContent = datum.timestamp;
+            // timestamp.textContent = datum.updated;
             // timestampContainer.appendChild(timestamp);
             // container.appendChild(timestampContainer);
 
