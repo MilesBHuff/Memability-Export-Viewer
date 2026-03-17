@@ -20,7 +20,7 @@ const getData = async () => {
                 parent_id: datum.parent,
                 // timestamp: oldData[i].updated || '2014-12-31T23:59:59.999999Z',
                 title: datum.title || 'untitled',
-                text: !datum.notes ? '' : datum.notes.replaceAll('\\\n', '\\n').replaceAll('\\\t', '\\t'),
+                text: !datum.notes ? '' : datum.notes,
             };
             if(datum.items?.length) buildMap(datum.items, outputMap);
         }
