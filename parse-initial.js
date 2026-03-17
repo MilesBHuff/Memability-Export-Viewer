@@ -67,41 +67,64 @@ async function main() {
     parseData(cleanedData, parsedData);
     cleanedData = null;
 
+    // Simplify the data
+    /** Recursively parses through the data and arrayifies ID-based hashmaps.
+     *  All operations are in-place.
+     * @param {object} oldData
+     * @param {Array<object>} newData
+     */
+    const simplifyData = (oldData, newData) => {
+        for(const id of Reflect.ownKeys(oldData)) {
+            const newDatum = {
+                // timestamp: oldData[id].timestamp, //NOTE: I've commented this since the timestamps in my export are not useful information.
+                title: oldData[id].title,
+                text: oldData[id].text,
+            }
+            if(oldData[id].children) {
+                newDatum.children = [];
+                simplifyData(oldData[id].children, newDatum.children);
+            }
+            newData.push(newDatum);
+        }
+    };
+    const simplifiedData = [];
+    simplifyData(parsedData, simplifiedData);
+    parsedData = null;
+
     // Display the data
-    console.debug(parsedData);
+    console.debug(simplifiedData);
     /** Recursively parses through the data and constructs HTML to display it.
-     * @param {object} data
+     * @param {Array<object>} data
      * @param {Element} parent
      */
     const displayData = (data, parent, depth = 2) => {
-        for(const id of Reflect.ownKeys(data)) {
+        for(const datum of data) {
 
             const container = document.createElement('div');
-            container.setAttribute('id', id)
             container.setAttribute('class', 'container')
 
             // const timestampContainer = document.createElement('p');
             // timestampContainer.setAttribute('class', 'timestamp')
             // const timestamp = document.createElement('code');
-            // timestamp.textContent = data[id].timestamp;
+            // timestamp.textContent = datum.timestamp;
             // timestampContainer.appendChild(timestamp);
             // container.appendChild(timestampContainer);
 
             const title = document.createElement(`h${depth}`);
             title.setAttribute('class', 'title')
-            title.textContent = data[id].title;
+            title.textContent = datum.title;
             container.appendChild(title);
 
             const text = document.createElement('pre');
             text.setAttribute('class', 'text')
-            text.textContent = data[id].text;
+            text.textContent = datum.text;
             container.appendChild(text);
 
             parent.appendChild(container);
-            if(data[id].children) displayData(data[id].children, container, depth + 1);
+            if(datum.children) displayData(datum.children, container, depth + 1);
         }
     };
     const output = document.getElementById('output');
     output.replaceChildren();
-    displayData(parsedData, output);
+    displayData(simplifiedData, output);
 }
