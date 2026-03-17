@@ -28,11 +28,11 @@ const getData = async () => {
             }
             outputMap[datum.id] = {
                 parent_id: datum.parent,
-                updated: localizeDatetime(datum.updated || globalThis.defaultTimestamp),
-                created: localizeDatetime(datum.created || globalThis.defaultTimestamp),
+                updated: localizeDatetime(datum.updated || globalThis.memability.defaultTimestamp),
+                created: localizeDatetime(datum.created || globalThis.memability.defaultTimestamp),
                 title: datum.title || 'untitled',
                 text: !datum.notes ? '' : String(datum.notes).replaceAll('&nbsp;', ' ').replaceAll(' ', ' ').replaceAll('<br/>', '\n'), // When Memability became Memz.co, it mangled several characters; we have to fix these.
-                removed: datum.removed != null ? localizeDatetime(datum.removed) : (datum.deleted ? localizeDatetime(globalThis.defaultTimestamp) : undefined),
+                removed: datum.removed != null ? localizeDatetime(datum.removed) : (datum.deleted ? localizeDatetime(globalThis.memability.defaultTimestamp) : undefined),
             };
             if(datum.items?.length) buildMap(datum.items, outputMap);
         }
@@ -73,7 +73,7 @@ const displayData = data => {
         for(const datum of data) {
             let removedClass = '';
             if(datum.removed) {
-                if(globalThis.skipRemoved) continue;
+                if(globalThis.memability.skipRemoved) continue;
                 removedClass = ' deleted';
             }
 
