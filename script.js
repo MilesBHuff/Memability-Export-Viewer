@@ -1,8 +1,10 @@
 globalThis.memability = {
-    defaultTimestamp: (new Date()).toISOString().replace('Z', '000Z'),
     skipRemoved: true,
+    defaultTimestamp: (new Date()).toISOString().replace('Z', '000Z'),
 };
-const localizeDatetime = datetime => new Date(datetime).toLocaleString('en-CA', {dateStyle: 'short', timeStyle: 'short', hour12: false}).replace(',', ''); // `en-CA` used in order to get Y-M-D.
+const sanitize = str => str.replaceAll('&nbsp;', ' ').replaceAll(' ', ' ').replaceAll('<br/>', '\n'); // When Memability became Memz.co, it mangled several characters; we have to fix these.
+const tidyDatetime = datetime => new Date(datetime).toISOString().replace('.000Z', 'Z');
+const localizeDatetime = datetime => new Date(datetime).toLocaleString('en-CA', {dateStyle: 'short', timeStyle: 'long', hour12: false}).replace(',', ''); // `en-CA` used in order to get Y-M-D.
 
 ////////////////////////////////////////////////////////////////////////////////
 const getData = async () => {
@@ -26,14 +28,25 @@ const getData = async () => {
                 console.warn(`"${datum.id}" is not a unique ID — data will be lost!`)
                 continue;
             }
-            outputMap[datum.id] = {
-                parent_id: datum.parent,
-                updated: localizeDatetime(datum.updated || globalThis.memability.defaultTimestamp),
-                created: localizeDatetime(datum.created || globalThis.memability.defaultTimestamp),
-                title: datum.title || 'untitled',
-                text: !datum.notes ? '' : String(datum.notes).replaceAll('&nbsp;', ' ').replaceAll(' ', ' ').replaceAll('<br/>', '\n'), // When Memability became Memz.co, it mangled several characters; we have to fix these.
-                removed: datum.removed != null ? localizeDatetime(datum.removed) : (datum.deleted ? localizeDatetime(globalThis.memability.defaultTimestamp) : undefined),
-            };
+
+            // Construct the new object.
+            if(!datum.title && !datum.notes) continue; // Exclude blank notes.
+            outputMap[datum.id] = {};
+            outputMap[datum.id].content = {};
+            outputMap[datum.id].content.title = datum.title ? sanitize(datum.title) : 'untitled';
+            if(datum.notes) outputMap[datum.id].content.text = sanitize(datum.notes);
+            if(datum.removed || datum.updated || datum.updated) {
+                outputMap[datum.id].timestamps = {};
+                outputMap[datum.id].timestamps.removed = datum.removed != null ? tidyDatetime(datum.removed) : (datum.deleted ? tidyDatetime(globalThis.memability.defaultTimestamp) : undefined);
+                if(!outputMap[datum.id].timestamps.removed) delete outputMap[datum.id].timestamps.removed;
+                outputMap[datum.id].timestamps.updated = datum.updated ? tidyDatetime(datum.updated) : undefined;
+                if(!outputMap[datum.id].timestamps.updated) delete outputMap[datum.id].timestamps.updated;
+                outputMap[datum.id].timestamps.created = datum.created ? tidyDatetime(datum.created) : outputMap[datum.id].timestamps.updated;
+                if(!outputMap[datum.id].timestamps.created) delete outputMap[datum.id].timestamps.created;
+            }
+            if(datum.parent) outputMap[datum.id].parent_id = datum.parent;
+
+            // Recurse
             if(datum.items?.length) buildMap(datum.items, outputMap);
         }
         return outputMap;
@@ -76,7 +89,7 @@ const displayData = data => {
     const buildDataDisplay = (data, parent, depth = 2) => {
         for(const datum of data) {
             let removedClass = '';
-            if(datum.removed) {
+            if(datum.timestamps.removed) {
                 if(globalThis.memability.skipRemoved) continue;
                 removedClass = ' deleted';
             }
@@ -86,20 +99,27 @@ const displayData = data => {
 
             const title = document.createElement(`h${Math.min(depth, 6)}`);
             title.setAttribute('class', `title${removedClass}`)
-            title.textContent = datum.title;
+            title.textContent = datum.content.title;
             container.appendChild(title);
 
-            const text = document.createElement('pre');
-            text.setAttribute('class', `text${removedClass}`)
-            text.textContent = datum.text;
-            container.appendChild(text);
+            if(datum.content.text) {
+                const text = document.createElement('pre');
+                text.setAttribute('class', `text${removedClass}`)
+                text.textContent = datum.content.text;
+                container.appendChild(text);
+            }
 
-            const timestampContainer = document.createElement('p');
-            timestampContainer.setAttribute('class', 'timestamp')
-            const timestamp = document.createElement('code');
-            timestamp.textContent = (datum.removed ? `Deleted ${datum.removed} | ` : '') + (datum.updated !== datum.created ? `Updated ${datum.updated} | ` : '') + `Created ${datum.created}`;
-            timestampContainer.appendChild(timestamp);
-            container.appendChild(timestampContainer);
+            if(datum.timestamps) {
+                const timestampContainer = document.createElement('p');
+                timestampContainer.setAttribute('class', 'timestamp')
+                const timestamp = document.createElement('code');
+                timestamp.textContent
+                    = (datum.timestamps.removed ? `Deleted ${localizeDatetime(datum.timestamps.removed)} | ` : '')
+                    + (datum.timestamps.updated !== datum.timestamps.created ? `Updated ${localizeDatetime(datum.timestamps.updated)} | ` : '')
+                    + `Created ${localizeDatetime(datum.timestamps.created)}`;
+                timestampContainer.appendChild(timestamp);
+                container.appendChild(timestampContainer);
+            }
 
             parent.appendChild(container);
             if(datum.children) buildDataDisplay(datum.children, container, depth + 1);
